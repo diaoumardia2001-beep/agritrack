@@ -20,10 +20,12 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      elevation: 3,
-      shadowColor: color.withValues(alpha: 0.25),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Semantics(
+      label: '$title: $value ${subtitle ?? ''}',
+      child: Card(
+        elevation: 3,
+        shadowColor: color.withValues(alpha: 0.25),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -84,6 +86,7 @@ class StatCard extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
