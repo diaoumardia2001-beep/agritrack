@@ -1,6 +1,6 @@
 # 🌿 AgriTrack — Suivi de Cheptel pour Éleveurs
 
-[![CI/CD Pipeline](https://github.com/diaoumardia2001-beep/DI-Boocamp-August/actions/workflows/ci.yml/badge.svg)](https://github.com/diaoumardia2001-beep/DI-Boocamp-August/actions)
+[![CI/CD Pipeline](https://github.com/diaoumardia2001-beep/agritrack/actions/workflows/ci.yml/badge.svg)](https://github.com/diaoumardia2001-beep/agritrack/actions)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
 [![Riverpod](https://img.shields.io/badge/State_Management-Riverpod_2.5-00D2B4)](https://riverpod.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
