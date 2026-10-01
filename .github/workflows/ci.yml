@@ -1,0 +1,44 @@
+name: AgriTrack CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  analyze-and-test:
+    name: Lint, Test & Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up Java (for Android build tools)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 🐦 Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Install Dependencies
+        run: flutter pub get
+
+      - name: 🔍 Static Code Analysis (Zero Warnings)
+        run: flutter analyze
+
+      - name: 🧪 Run Unit & Widget Tests with Coverage
+        run: flutter test --coverage
+
+      - name: 🌐 Build Web Artifact
+        run: flutter build web --release
+
+      - name: 🤖 Build Android APK (Release)
+        run: flutter build apk --release --split-per-abi || flutter build apk --release
