@@ -126,10 +126,12 @@ abstract class IAuthService {
     required String password,
     required String fullName,
     String? phoneNumber,
+    String? emailRedirectTo,
   });
 
   Future<void> resendEmailConfirmation({
     required String email,
+    String? emailRedirectTo,
   });
 
   Future<void> signOut();
@@ -174,12 +176,29 @@ class SupabaseAuthService implements IAuthService {
     );
   }
 
+  /// Résout l'URL de redirection pour la confirmation d'e-mail (Web origin par défaut).
+  static String? resolveEmailRedirectTo([String? customRedirectTo]) {
+    if (customRedirectTo != null && customRedirectTo.trim().isNotEmpty) {
+      return customRedirectTo.trim();
+    }
+    if (kIsWeb) {
+      try {
+        final origin = Uri.base.origin;
+        if (origin.isNotEmpty && origin != 'null') {
+          return origin;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
   @override
   Future<AuthResponse> signUp({
     required String email,
     required String password,
     required String fullName,
     String? phoneNumber,
+    String? emailRedirectTo,
   }) async {
     final client = _client;
     if (client == null) {
@@ -187,9 +206,11 @@ class SupabaseAuthService implements IAuthService {
         'Service d\'authentification indisponible (client Supabase non initialisé).',
       );
     }
+    final redirect = resolveEmailRedirectTo(emailRedirectTo);
     return await client.auth.signUp(
       email: email.trim(),
       password: password,
+      emailRedirectTo: redirect,
       data: {
         'full_name': fullName.trim(),
         if (phoneNumber != null && phoneNumber.trim().isNotEmpty)
@@ -199,16 +220,21 @@ class SupabaseAuthService implements IAuthService {
   }
 
   @override
-  Future<void> resendEmailConfirmation({required String email}) async {
+  Future<void> resendEmailConfirmation({
+    required String email,
+    String? emailRedirectTo,
+  }) async {
     final client = _client;
     if (client == null) {
       throw const AuthException(
         'Service d\'authentification indisponible (client Supabase non initialisé).',
       );
     }
+    final redirect = resolveEmailRedirectTo(emailRedirectTo);
     await client.auth.resend(
       type: OtpType.signup,
       email: email.trim(),
+      emailRedirectTo: redirect,
     );
   }
 
@@ -353,6 +379,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     required String password,
     required String fullName,
     String? phoneNumber,
+    String? emailRedirectTo,
   }) async {
     if (!_authService.isAvailable) {
       state = const AppAuthState.error(
@@ -369,6 +396,7 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
         password: password,
         fullName: fullName,
         phoneNumber: phoneNumber,
+        emailRedirectTo: emailRedirectTo,
       );
 
       final user = response.user;
@@ -401,7 +429,10 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
   }
 
   /// Renvoi de l'e-mail de confirmation après inscription
-  Future<bool> resendConfirmationEmail(String email) async {
+  Future<bool> resendConfirmationEmail(
+    String email, {
+    String? emailRedirectTo,
+  }) async {
     if (!_authService.isAvailable) {
       state = state.copyWith(
         status: AuthStatus.error,
@@ -413,7 +444,10 @@ class AuthNotifier extends StateNotifier<AppAuthState> {
     }
 
     try {
-      await _authService.resendEmailConfirmation(email: email.trim());
+      await _authService.resendEmailConfirmation(
+        email: email.trim(),
+        emailRedirectTo: emailRedirectTo,
+      );
       return true;
     } on AuthException catch (e) {
       final friendly = _humanizeAuthError(e.message);

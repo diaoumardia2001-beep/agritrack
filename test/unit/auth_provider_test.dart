@@ -23,6 +23,8 @@ class FakeAuthService implements IAuthService {
   Exception? resendError;
   int resendCallCount = 0;
   String? lastResentEmail;
+  String? lastSignUpEmailRedirectTo;
+  String? lastResendEmailRedirectTo;
 
   FakeAuthService({
     this.simulateClientAvailable = true,
@@ -89,7 +91,9 @@ class FakeAuthService implements IAuthService {
     required String password,
     required String fullName,
     String? phoneNumber,
+    String? emailRedirectTo,
   }) async {
+    lastSignUpEmailRedirectTo = emailRedirectTo;
     if (!simulateClientAvailable) {
       throw const AuthException('Client non initialisé');
     }
@@ -122,7 +126,11 @@ class FakeAuthService implements IAuthService {
   }
 
   @override
-  Future<void> resendEmailConfirmation({required String email}) async {
+  Future<void> resendEmailConfirmation({
+    required String email,
+    String? emailRedirectTo,
+  }) async {
+    lastResendEmailRedirectTo = emailRedirectTo;
     if (!simulateClientAvailable) {
       throw const AuthException('Client non initialisé');
     }
@@ -439,6 +447,41 @@ void main() {
       final state = container.read(authProvider);
       expect(state.hasError, isTrue);
       expect(state.isClientAvailable, isFalse);
+    });
+
+    test('15. signUp passes emailRedirectTo down to auth service', () async {
+      final notifier = container.read(authProvider.notifier);
+      final success = await notifier.signUp(
+        email: 'redirect_test@agritrack.sn',
+        password: 'Password123!',
+        fullName: 'Redirect Tester',
+        emailRedirectTo: 'https://agritrack-olive.vercel.app',
+      );
+
+      expect(success, isTrue);
+      expect(fakeAuth.lastSignUpEmailRedirectTo,
+          equals('https://agritrack-olive.vercel.app'));
+    });
+
+    test('16. resendConfirmationEmail passes emailRedirectTo to auth service',
+        () async {
+      final notifier = container.read(authProvider.notifier);
+      final success = await notifier.resendConfirmationEmail(
+        'redirect_resend@agritrack.sn',
+        emailRedirectTo: 'https://agritrack-olive.vercel.app',
+      );
+
+      expect(success, isTrue);
+      expect(fakeAuth.lastResendEmailRedirectTo,
+          equals('https://agritrack-olive.vercel.app'));
+    });
+
+    test(
+        '17. SupabaseAuthService.resolveEmailRedirectTo prioritizes custom URL',
+        () {
+      final resolved = SupabaseAuthService.resolveEmailRedirectTo(
+          'https://custom.agritrack.sn');
+      expect(resolved, equals('https://custom.agritrack.sn'));
     });
   });
 }

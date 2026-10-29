@@ -1,6 +1,7 @@
 // lib/services/sync/connectivity_service.dart
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/supabase_config.dart';
 
 /// Abstraction du service de connectivité réseau pour AgriTrack.
@@ -64,25 +65,56 @@ class ConnectivityService implements IConnectivityService {
         return false;
       }
 
-      // Test de joignabilité rapide avec timeout de 3 secondes
-      // Utilise l'appel RPC de santé ou une requête légère avec limite
-      final isReachable = await Future.any<bool>([
-        client
+      // Sonde la joignabilité de l'infrastructure Supabase.
+      // IMPORTANT SÉCURITÉ : La table 'farms' est protégée par RLS et restreinte pour 'anon'.
+      // Une réponse d'erreur PostgREST (ex: code 42501 "permission denied", code 401 ou 403)
+      // prouve que le serveur Supabase est en ligne et a répondu, et ne doit
+      // PAS être interprétée comme une absence de réseau.
+      try {
+        await client
             .from('farms')
             .select('id')
             .limit(1)
             .maybeSingle()
-            .then((_) => true)
-            .catchError((_) => false),
-        Future.delayed(const Duration(seconds: 3), () => false),
-      ]);
-
-      setOnlineStatus(isReachable);
-      return isReachable;
+            .timeout(const Duration(seconds: 3));
+        setOnlineStatus(true);
+        return true;
+      } on PostgrestException catch (_) {
+        // Le serveur Supabase a répondu (refus d'accès RLS ou absence de session valide).
+        // L'infrastructure réseau et serveur est parfaitement en ligne.
+        setOnlineStatus(true);
+        return true;
+      } on TimeoutException {
+        // Le serveur n'a pas répondu dans le délai imparti
+        setOnlineStatus(false);
+        return false;
+      } catch (e) {
+        if (isNetworkFailure(e)) {
+          setOnlineStatus(false);
+          return false;
+        }
+        // Toute autre erreur non liée à une coupure socket/réseau
+        setOnlineStatus(true);
+        return true;
+      }
     } catch (_) {
       setOnlineStatus(false);
       return false;
     }
+  }
+
+  /// Détermine si une exception correspond à une indisponibilité réseau ou socket.
+  static bool isNetworkFailure(Object error) {
+    final errStr = error.toString().toLowerCase();
+    return errStr.contains('socketexception') ||
+        errStr.contains('failed to fetch') ||
+        errStr.contains('network is unreachable') ||
+        errStr.contains('connection refused') ||
+        errStr.contains('connection timed out') ||
+        errStr.contains('connection reset') ||
+        errStr.contains('clientexception') ||
+        errStr.contains('xmlhttprequest') ||
+        errStr.contains('handshakeexception');
   }
 
   @override

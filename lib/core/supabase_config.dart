@@ -14,6 +14,15 @@ class SupabaseConfig {
   static const String _defaultLocalHostUrl = 'http://127.0.0.1:54321';
   static const String _defaultAndroidEmulatorUrl = 'http://10.0.2.2:54321';
 
+  /// URL officielle du projet Supabase Cloud AgriTrack de production
+  static const String cloudProductionUrl =
+      'https://uzquikczddvawxsjwwuk.supabase.co';
+
+  /// Clé publique client publishable pour l'instance Supabase Cloud AgriTrack.
+  /// Strictement publique, restreinte par RLS côté serveur (ne jamais injecter service_role).
+  static const String _defaultCloudPublishableKey =
+      'sb_publishable_7jSX8EVtdXzzd9PbCKCcow_LPLUzqTP';
+
   /// Clé publique anon par défaut générée pour l'instance locale de dev Supabase.
   /// Cette clé est strictement publique (publishable) et régie par les politiques RLS.
   /// IMPORTANT : Ne jamais injecter de clé `service_role` dans l'application.
@@ -54,11 +63,25 @@ class SupabaseConfig {
     return Supabase.instance.client;
   }
 
+  /// Détermine si l'environnement d'exécution Web est hébergé sur un domaine public/production.
+  static bool isProductionWebHost([String? webHost]) {
+    String currentHost = webHost ?? '';
+    if (currentHost.isEmpty && kIsWeb) {
+      try {
+        currentHost = Uri.base.host;
+      } catch (_) {}
+    }
+    return currentHost.isNotEmpty &&
+        currentHost != 'localhost' &&
+        currentHost != '127.0.0.1';
+  }
+
   /// Résout l'URL Supabase appropriée selon la plateforme d'exécution
   /// et les variables `--dart-define`.
   static String resolveUrl({
     TargetPlatform? platform,
     bool? isWeb,
+    String? webHost,
   }) {
     // 1. Priorité absolue : variable de compilation `--dart-define=SUPABASE_URL=...`
     const envUrl = String.fromEnvironment('SUPABASE_URL');
@@ -68,6 +91,11 @@ class SupabaseConfig {
 
     final runningOnWeb = isWeb ?? kIsWeb;
     if (runningOnWeb) {
+      if (isProductionWebHost(webHost)) {
+        // Version Web de production (ex: agritrack-olive.vercel.app) :
+        // Empêche formellement une connexion silencieuse erronée à 127.0.0.1
+        return cloudProductionUrl;
+      }
       return _defaultLocalHostUrl;
     }
 
@@ -86,12 +114,18 @@ class SupabaseConfig {
   }
 
   /// Résout la clé publique anonyme selon les variables `--dart-define`.
-  static String _resolveAnonKey() {
+  static String _resolveAnonKey({bool? isWeb, String? webHost}) {
     const envKey = String.fromEnvironment('SUPABASE_ANON_KEY');
     if (envKey.isNotEmpty) {
       _assertNotServiceRoleKey(envKey);
       return envKey;
     }
+
+    final runningOnWeb = isWeb ?? kIsWeb;
+    if (runningOnWeb && isProductionWebHost(webHost)) {
+      return _defaultCloudPublishableKey;
+    }
+
     return _defaultLocalAnonKey;
   }
 
@@ -112,9 +146,10 @@ class SupabaseConfig {
   static Future<bool> initialize({
     String? customUrl,
     String? customAnonKey,
+    String? webHost,
   }) async {
-    final targetUrl = customUrl ?? resolveUrl();
-    final targetKey = customAnonKey ?? _resolveAnonKey();
+    final targetUrl = customUrl ?? resolveUrl(webHost: webHost);
+    final targetKey = customAnonKey ?? _resolveAnonKey(webHost: webHost);
 
     // Garde-fou strict de sécurité : lève immédiatement ArgumentError si une clé secrète est passée
     _assertNotServiceRoleKey(targetKey);

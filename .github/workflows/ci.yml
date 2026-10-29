@@ -38,7 +38,13 @@ jobs:
         run: flutter test --coverage
 
       - name: 🌐 Build Web Artifact
-        run: flutter build web --release
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://uzquikczddvawxsjwwuk.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_7jSX8EVtdXzzd9PbCKCcow_LPLUzqTP' }}
+        run: |
+          flutter build web --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       - name: 📤 Upload Web Artifact
         uses: actions/upload-artifact@v4

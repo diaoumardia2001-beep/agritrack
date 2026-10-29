@@ -48,6 +48,29 @@ void main() {
       );
       expect(url, equals('http://127.0.0.1:54321'));
     });
+
+    test(
+        '4b. Resolves cloud production URL on public Web domain (agritrack-olive.vercel.app)',
+        () {
+      final url = SupabaseConfig.resolveUrl(
+        isWeb: true,
+        webHost: 'agritrack-olive.vercel.app',
+      );
+      expect(url, equals(SupabaseConfig.cloudProductionUrl));
+      expect(url, contains('supabase.co'));
+    });
+
+    test('4c. Keeps local dev URL on local Web domain (localhost, 127.0.0.1)',
+        () {
+      expect(
+        SupabaseConfig.resolveUrl(isWeb: true, webHost: 'localhost'),
+        equals('http://127.0.0.1:54321'),
+      );
+      expect(
+        SupabaseConfig.resolveUrl(isWeb: true, webHost: '127.0.0.1'),
+        equals('http://127.0.0.1:54321'),
+      );
+    });
   });
 
   group('SupabaseConfig - Security & Key Validation', () {
