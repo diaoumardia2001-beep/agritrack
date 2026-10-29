@@ -13,6 +13,12 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.5.1
   intl: ^0.20.0
+  sembast: ^3.9.0
+  sembast_web: ^2.4.6+1
+  path_provider: ^2.1.6
+  path: ^1.9.1
+  shared_preferences: ^2.5.6
+  supabase_flutter: ^2.8.0
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +30,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/images/

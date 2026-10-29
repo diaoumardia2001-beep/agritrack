@@ -5,7 +5,8 @@ import 'package:agritrack/models/animal.dart';
 import 'package:agritrack/widgets/animal_card.dart';
 
 void main() {
-  testWidgets('AnimalCard displays animal name, type, weight and triggers onTap',
+  testWidgets(
+      'AnimalCard displays animal name, type, weight and triggers onTap',
       (WidgetTester tester) async {
     bool tapped = false;
     final animal = Animal(

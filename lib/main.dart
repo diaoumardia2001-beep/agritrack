@@ -1,26 +1,53 @@
 // lib/main.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'core/supabase_config.dart';
 import 'l10n/app_localizations.dart';
 import 'providers/locale_provider.dart';
+import 'providers/shared_preferences_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/main_shell.dart';
+import 'screens/splash_screen.dart';
+import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  SharedPreferences? prefs;
+  try {
+    prefs = await SharedPreferences.getInstance();
+  } catch (e) {
+    debugPrint('Failed to initialize SharedPreferences: $e');
+  }
+
+  // Initialisation résiliente de Supabase (tolérance hors-ligne / mode local Sembast)
+  await SupabaseConfig.initialize();
+
   runApp(
-    const ProviderScope(
-      child: AgriTrackApp(),
+    ProviderScope(
+      overrides: [
+        if (prefs != null) sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const AgriTrackApp(),
     ),
   );
 }
 
 class AgriTrackApp extends ConsumerWidget {
-  const AgriTrackApp({super.key});
+  final bool? skipSplash;
+
+  const AgriTrackApp({
+    super.key,
+    this.skipSplash,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final locale = ref.watch(localeProvider);
+    final shouldSkipSplash = skipSplash ?? kIsWeb;
 
     return MaterialApp(
       title: 'AgriTrack',
@@ -35,84 +62,12 @@ class AgriTrackApp extends ConsumerWidget {
       themeMode: themeMode,
 
       // ─── Light Theme ───────────────────────────────────────────────
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32),
-          brightness: Brightness.light,
-        ),
-        fontFamily: 'Roboto',
-        appBarTheme: const AppBarTheme(
-          centerTitle: false,
-          elevation: 0,
-          scrolledUnderElevation: 2,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        chipTheme: ChipThemeData(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-        snackBarTheme: SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
 
       // ─── Dark Theme ────────────────────────────────────────────────
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32),
-          brightness: Brightness.dark,
-        ),
-        fontFamily: 'Roboto',
-        appBarTheme: const AppBarTheme(
-          centerTitle: false,
-          elevation: 0,
-          scrolledUnderElevation: 2,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        chipTheme: ChipThemeData(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-        snackBarTheme: SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
-          ),
-        ),
-      ),
+      darkTheme: AppTheme.darkTheme,
 
-      home: const MainShell(),
+      home: shouldSkipSplash ? const MainShell() : const SplashScreen(),
     );
   }
 }

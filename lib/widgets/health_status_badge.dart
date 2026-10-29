@@ -50,7 +50,7 @@ class HealthStatusBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
       decoration: BoxDecoration(
         color: _bgColor(context),
         borderRadius: BorderRadius.circular(20),
@@ -58,15 +58,19 @@ class HealthStatusBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(_icon(), size: 14, color: _fgColor()),
+          Icon(_icon(), size: 12, color: _fgColor()),
           const SizedBox(width: 4),
-          Text(
-            status.label,
-            style: TextStyle(
-              color: _fgColor(),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
+          Flexible(
+            child: Text(
+              status.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: _fgColor(),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
             ),
           ),
         ],

@@ -25,7 +25,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify Add Animal screen is shown
-    expect(find.text('Nouvel Animal'), findsOneWidget);
+    expect(find.text('Ajouter un animal'), findsOneWidget);
 
     // Enter name
     final nameField = find.byType(TextFormField).at(0);
@@ -43,12 +43,17 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap submit button
-    final submitButton = find.text('Enregistrer l\'animal');
+    final submitButton = find.text('Ajouter l\'animal');
     await tester.ensureVisible(submitButton);
     await tester.tap(submitButton);
     await tester.pumpAndSettle();
 
     // Verify confirmation snackbar
-    expect(find.text('Bandiagara a été ajouté avec succès ! 🎉'), findsOneWidget);
+    expect(find.text('Bandiagara ajouté avec succès ! 🐄'), findsOneWidget);
+
+    // Wait for refetch and snackbar timers to settle
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
   });
 }

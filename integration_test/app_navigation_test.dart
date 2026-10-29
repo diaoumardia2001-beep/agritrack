@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -19,7 +20,8 @@ void main() {
 
     // Verify Dashboard is displayed
     expect(find.text('Tableau de bord'), findsOneWidget);
-    expect(find.text('AgriTrack'), findsOneWidget);
+    expect(find.text('Agri'), findsWidgets);
+    expect(find.text('Track'), findsWidgets);
 
     // Switch to Herd Tab (index 1)
     final herdTab = find.text('Cheptel');
@@ -37,11 +39,11 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify Detail screen
-    expect(find.text('Dépenses cumulées'), findsOneWidget);
-    expect(find.text('Ajouter une dépense'), findsOneWidget);
+    expect(find.text('Historique des dépenses'), findsOneWidget);
+    expect(find.text('Poids'), findsOneWidget);
 
     // Go back
-    final backButton = find.byTooltip('Back');
+    final backButton = find.byType(BackButton);
     if (backButton.evaluate().isNotEmpty) {
       await tester.tap(backButton);
       await tester.pumpAndSettle();

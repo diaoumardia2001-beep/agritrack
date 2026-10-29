@@ -19,7 +19,8 @@ void main() {
     );
 
     expect(find.text('Aucun animal'), findsOneWidget);
-    expect(find.text('Ajoutez votre premier animal pour commencer.'), findsOneWidget);
+    expect(find.text('Ajoutez votre premier animal pour commencer.'),
+        findsOneWidget);
     expect(find.byIcon(Icons.pets), findsOneWidget);
   });
 }
