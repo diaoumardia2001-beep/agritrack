@@ -1,10 +1,12 @@
 // lib/screens/main_shell.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/demo_mode_config.dart';
 import '../providers/active_farm_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/agritrack_logo.dart';
+import '../widgets/demo_recruiter_banner.dart';
 import 'dashboard_screen.dart';
 import 'animal_list_screen.dart';
 import 'add_animal_screen.dart';
@@ -302,15 +304,23 @@ class _MainShellState extends ConsumerState<MainShell> {
 
           // ── Contenu principal ──
           Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
+            child: Column(
               children: [
-                DashboardScreen(
-                  onNavigateToHerd: () => setState(() => _currentIndex = 1),
-                  onNavigateToSettings: () => setState(() => _currentIndex = 2),
+                if (ref.watch(isDemoModeProvider))
+                  const DemoRecruiterBanner(),
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentIndex,
+                    children: [
+                      DashboardScreen(
+                        onNavigateToHerd: () => setState(() => _currentIndex = 1),
+                        onNavigateToSettings: () => setState(() => _currentIndex = 2),
+                      ),
+                      const AnimalListScreen(),
+                      const SettingsScreen(),
+                    ],
+                  ),
                 ),
-                const AnimalListScreen(),
-                const SettingsScreen(),
               ],
             ),
           ),
@@ -325,16 +335,27 @@ class _MainShellState extends ConsumerState<MainShell> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          DashboardScreen(
-            onNavigateToHerd: () => setState(() => _currentIndex = 1),
-            onNavigateToSettings: () => setState(() => _currentIndex = 2),
-          ),
-          const AnimalListScreen(),
-          const SettingsScreen(),
-        ],
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            if (ref.watch(isDemoModeProvider))
+              const DemoRecruiterBanner(),
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex,
+                children: [
+                  DashboardScreen(
+                    onNavigateToHerd: () => setState(() => _currentIndex = 1),
+                    onNavigateToSettings: () => setState(() => _currentIndex = 2),
+                  ),
+                  const AnimalListScreen(),
+                  const SettingsScreen(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _onAddAnimal,

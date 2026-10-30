@@ -439,3 +439,104 @@ class RealSupabaseSyncClient implements ISupabaseSyncClient {
     return List<Map<String, dynamic>>.from(response as List);
   }
 }
+
+/// Client de synchronisation inerte et hermétique pour le Mode Démo.
+///
+/// Lève une exception immédiate ou refuse formellement toute tentative
+/// d'écriture ou d'appel RPC vers Supabase Cloud.
+class DisabledSupabaseSyncClient implements ISupabaseSyncClient {
+  const DisabledSupabaseSyncClient();
+
+  static const String _blockedMessage =
+      'Mode démo actif : toute écriture ou appel distant Supabase est strictement interdit pour garantir l\'étanchéité.';
+
+  @override
+  Future<SyncPushResult> pushAnimalRpc({
+    required String operationId,
+    required String farmId,
+    required String action,
+    int? expectedVersion,
+    String? localId,
+    String? remoteId,
+    String? name,
+    String? type,
+    int? ageMonths,
+    double? weightKg,
+    String? healthStatus,
+    String? imageUrl,
+    DateTime? deletedAt,
+  }) async {
+    throw StateError(_blockedMessage);
+  }
+
+  @override
+  Future<SyncPushResult> pushExpenseRpc({
+    required String operationId,
+    required String farmId,
+    required String action,
+    int? expectedVersion,
+    String? localId,
+    String? remoteId,
+    String? animalId,
+    String? label,
+    double? amount,
+    DateTime? date,
+    String? category,
+    DateTime? deletedAt,
+  }) async {
+    throw StateError(_blockedMessage);
+  }
+
+  @override
+  Future<String> upsertAnimal(Map<String, dynamic> animalPayload) async {
+    throw StateError(_blockedMessage);
+  }
+
+  @override
+  Future<void> softDeleteAnimal({
+    required String remoteId,
+    required String farmId,
+    required DateTime deletedAt,
+  }) async {
+    throw StateError(_blockedMessage);
+  }
+
+  @override
+  Future<String> upsertExpense(Map<String, dynamic> expensePayload) async {
+    throw StateError(_blockedMessage);
+  }
+
+  @override
+  Future<void> softDeleteExpense({
+    required String remoteId,
+    required String farmId,
+    required DateTime deletedAt,
+  }) async {
+    throw StateError(_blockedMessage);
+  }
+
+  @override
+  Future<String?> getMemberRole({
+    required String farmId,
+    required String userId,
+  }) async =>
+      null;
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchAnimals({
+    required String farmId,
+    DateTime? since,
+    String? lastId,
+    int limit = 100,
+  }) async =>
+      const [];
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchExpenses({
+    required String farmId,
+    DateTime? since,
+    String? lastId,
+    int limit = 100,
+  }) async =>
+      const [];
+}

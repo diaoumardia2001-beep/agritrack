@@ -1,6 +1,7 @@
 // lib/core/supabase_config.dart
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'demo_mode_config.dart';
 
 /// Configuration centralisée et sécurisée pour le client Supabase d'AgriTrack.
 ///
@@ -43,8 +44,9 @@ class SupabaseConfig {
   static String get anonKey => _activeAnonKey ?? _resolveAnonKey();
 
   /// Accès sécurisé au client Supabase : retourne `null` si non initialisé
-  /// au lieu de lever une exception non rattrapée.
+  /// ou si le mode démo est actif, empêchant toute écriture distante.
   static SupabaseClient? get safeClient {
+    if (DemoModeConfig.isDemoMode()) return null;
     if (!_isInitialized) return null;
     try {
       return Supabase.instance.client;
@@ -55,6 +57,11 @@ class SupabaseConfig {
 
   /// Accès direct au client Supabase (à utiliser lorsque `isInitialized == true`).
   static SupabaseClient get client {
+    if (DemoModeConfig.isDemoMode()) {
+      throw StateError(
+        'Mode démo actif : tout appel direct au client Supabase est strictement interdit pour garantir l\'étanchéité.',
+      );
+    }
     if (!_isInitialized) {
       throw StateError(
         'SupabaseConfig n\'est pas encore initialisé. Vérifiez `SupabaseConfig.isInitialized` ou utilisez `SupabaseConfig.safeClient`.',
@@ -148,6 +155,16 @@ class SupabaseConfig {
     String? customAnonKey,
     String? webHost,
   }) async {
+    // Si le mode démo est actif, ignorer totalement l'initialisation Supabase
+    // pour garantir une absence absolue de connexions sortantes non sollicitées.
+    if (DemoModeConfig.isDemoMode()) {
+      debugPrint(
+        '[SupabaseConfig] Mode démo actif : initialisation Supabase ignorée pour étanchéité totale.',
+      );
+      _isInitialized = false;
+      return false;
+    }
+
     final targetUrl = customUrl ?? resolveUrl(webHost: webHost);
     final targetKey = customAnonKey ?? _resolveAnonKey(webHost: webHost);
 

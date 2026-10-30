@@ -2,6 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/demo_mode_config.dart';
 import '../core/supabase_config.dart';
 import '../data/database/database_migrator.dart';
 import '../models/farm.dart';
@@ -158,8 +159,33 @@ class SupabaseFarmService implements IFarmService {
   }
 }
 
+/// Service d'exploitation inerte pour le Mode Démonstration.
+/// Bloque toute tentative de création d'exploitation sur Supabase Cloud.
+class DisabledFarmService implements IFarmService {
+  const DisabledFarmService();
+
+  @override
+  Future<List<UserFarmMembership>> fetchUserFarms(String userId) async =>
+      const [];
+
+  @override
+  Future<Farm> createRemoteFarm({
+    required String name,
+    String? region,
+    bool isDemo = false,
+  }) async {
+    throw StateError(
+      'Mode démo actif : la création d\'exploitation distante Supabase est strictement interdite.',
+    );
+  }
+}
+
 // ─── Providers Riverpod ──────────────────────────────────────────────────────
 final farmServiceProvider = Provider<IFarmService>((ref) {
+  final isDemo = ref.watch(isDemoModeProvider);
+  if (isDemo) {
+    return const DisabledFarmService();
+  }
   return SupabaseFarmService();
 });
 

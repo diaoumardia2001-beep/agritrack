@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/demo_mode_config.dart';
 import '../../data/animals_repository.dart';
 import '../../data/database/database_migrator.dart';
 import '../../providers/active_farm_provider.dart';
@@ -140,6 +141,17 @@ class SyncCoordinator extends StateNotifier<SyncCoordinatorState>
   }
 
   Future<SyncResult> _performSync(String triggerReason) async {
+    // 0. Vérification du mode démo : interdiction formelle de synchronisation
+    if (DemoModeConfig.isDemoMode() || _ref.read(isDemoModeProvider)) {
+      debugPrint(
+        '[SyncCoordinator] Synchronisation ignorée ($triggerReason) : Mode Démo actif.',
+      );
+      return const SyncResult(
+        hasFatalError: false,
+        fatalErrorMessage: 'Mode démo actif : synchronisation cloud désactivée.',
+      );
+    }
+
     final activeFarmState = _ref.read(activeFarmProvider);
     final authState = _ref.read(authProvider);
 

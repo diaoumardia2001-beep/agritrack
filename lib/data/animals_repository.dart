@@ -134,6 +134,32 @@ class AnimalsRepository {
     });
   }
 
+  /// Réinitialise l'état des données du magasin en restaurant les 12 animaux initiaux.
+  /// Utilisé en mode démo pour remettre à zéro le jeu de données éphémère.
+  Future<void> resetDemoData() async {
+    final db = await _getDb();
+    await _ensureInitialized(db);
+    await db.transaction((txn) async {
+      await _animalsStore.delete(txn);
+      await _metadataStore.record('seeding').delete(txn);
+
+      for (final animal in demoAnimals) {
+        // Copie profonde via toMap/fromMap pour isoler les références
+        final cloned =
+            Animal.fromMap(Map<String, dynamic>.from(animal.toMap()));
+        await _animalsStore.record(cloned.id).put(txn, cloned.toMap());
+      }
+
+      await _metadataStore.record('seeding').put(txn, {
+        'seeded': true,
+        'seededAt': DateTime.now().toIso8601String(),
+        'version': 1,
+        'count': demoAnimals.length,
+        'reset': true,
+      });
+    });
+  }
+
   /// Récupère la liste des animaux persistés.
   /// Si [includeDeleted] est faux (par défaut), exclut les animaux supprimés logiquement.
   /// Si [farmId] est fourni, filtre les animaux de cette exploitation.

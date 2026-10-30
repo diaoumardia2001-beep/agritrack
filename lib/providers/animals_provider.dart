@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/demo_mode_config.dart';
 import '../data/animals_repository.dart';
 import '../data/database/database_migrator.dart';
+import '../data/database/demo_database_manager.dart';
 import '../models/animal.dart';
 import '../models/expense.dart';
 import '../models/farm.dart';
@@ -10,8 +12,15 @@ import 'active_farm_provider.dart';
 import 'auth_provider.dart';
 import 'sync_provider.dart';
 
-// ─── Repository singleton ───────────────────────────────────────────────────
+// ─── Repository singleton (avec isolation mémoire en Mode Démo) ─────────────
 final animalsRepositoryProvider = Provider<AnimalsRepository>((ref) {
+  final isDemo = ref.watch(isDemoModeProvider);
+  if (isDemo) {
+    return AnimalsRepository(
+      databaseProvider: () => DemoDatabaseManager.getDatabase(),
+      autoSeed: true,
+    );
+  }
   return AnimalsRepository();
 });
 
@@ -639,6 +648,20 @@ class AnimalsNotifier extends StateNotifier<AsyncValue<void>> {
       await _ref.read(animalsProvider.future);
       state = const AsyncValue.data(null);
       return deleted;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  /// Réinitialise l'état de la démonstration en restaurant le cheptel initial.
+  Future<void> resetDemoData() async {
+    state = const AsyncValue.loading();
+    try {
+      final repo = _ref.read(animalsRepositoryProvider);
+      await repo.resetDemoData();
+      _ref.invalidate(animalsProvider);
+      state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
